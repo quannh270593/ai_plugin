@@ -1,3 +1,4 @@
+import 'package:ai_plugin_example/main.dart';
 import 'package:get/get.dart';
 
 import '../modules/home/bindings/home_binding.dart';
@@ -13,8 +14,14 @@ class AppPages {
   static final routes = [
     GetPage(
       name: _Paths.HOME,
-      page: () => const HomeView(),
+      page: () => HomeView(),
       binding: HomeBinding(),
+    ),
+  ];
+  static final mainRoutes = [
+    GetPage(
+      name: _Paths.MAIN,
+      page: () => MainApp()
     ),
   ];
 }
