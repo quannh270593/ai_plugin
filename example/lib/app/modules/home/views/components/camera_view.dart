@@ -79,6 +79,11 @@ class _CameraViewState extends State<CameraView> {
 
   @override
   Widget build(BuildContext context) {
+    if (_controller == null) {
+      return const Center(
+        child: Text("loading"),
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
@@ -149,51 +154,49 @@ class _CameraViewState extends State<CameraView> {
 
     return Container(
       color: Colors.black,
-      child: Expanded(
-        child: Stack(
-          fit: StackFit.expand,
-          children: <Widget>[
-            Transform.scale(
-              scale: scale,
-              child: Center(
-                child: _changingCameraLens
-                    ? Center(
-                        child: const Text('Changing camera lens'),
-                      )
-                    : CameraPreview(_controller!),
-              ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: <Widget>[
+          Transform.scale(
+            scale: scale,
+            child: Center(
+              child: _changingCameraLens
+                  ? Center(
+                      child: const Text('Changing camera lens'),
+                    )
+                  : CameraPreview(_controller!),
             ),
-            Positioned(
-              bottom: 200,
-              left: 100,
-              child: Text(
-                widget.count,
-                // "ccccc",
-                style: TextStyle(fontSize: 30, color: Colors.red),
-              ),
+          ),
+          Positioned(
+            bottom: 200,
+            left: 100,
+            child: Text(
+              widget.count,
+              // "ccccc",
+              style: TextStyle(fontSize: 30, color: Colors.red),
             ),
-            if (widget.customPaint != null) widget.customPaint!,
-            Positioned(
-              bottom: 100,
-              left: 50,
-              right: 50,
-              child: Slider(
-                value: zoomLevel,
-                min: minZoomLevel,
-                max: maxZoomLevel,
-                onChanged: (newSliderValue) {
-                  setState(() {
-                    zoomLevel = newSliderValue;
-                    _controller!.setZoomLevel(zoomLevel);
-                  });
-                },
-                divisions: (maxZoomLevel - 1).toInt() < 1
-                    ? null
-                    : (maxZoomLevel - 1).toInt(),
-              ),
-            )
-          ],
-        ),
+          ),
+          if (widget.customPaint != null) widget.customPaint!,
+          Positioned(
+            bottom: 100,
+            left: 50,
+            right: 50,
+            child: Slider(
+              value: zoomLevel,
+              min: minZoomLevel,
+              max: maxZoomLevel,
+              onChanged: (newSliderValue) {
+                setState(() {
+                  zoomLevel = newSliderValue;
+                  _controller!.setZoomLevel(zoomLevel);
+                });
+              },
+              divisions: (maxZoomLevel - 1).toInt() < 1
+                  ? null
+                  : (maxZoomLevel - 1).toInt(),
+            ),
+          )
+        ],
       ),
     );
   }
