@@ -80,8 +80,10 @@ class _CameraViewState extends State<CameraView> {
   @override
   Widget build(BuildContext context) {
     if (_controller == null) {
-      return const Center(
-        child: Text("loading"),
+      return const Scaffold(
+        body: Center(
+          child: Text("loading"),
+        ),
       );
     }
     return Scaffold(

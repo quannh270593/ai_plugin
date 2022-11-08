@@ -1,5 +1,4 @@
 import 'package:ai_plugin/ai_plugin.dart';
-import 'package:ai_plugin/ai_plugin_platform_interface.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
@@ -7,8 +6,11 @@ import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 import '../views/components/pose_painter.dart';
 
 class HomeController extends GetxController {
-  final PoseDetector _poseDetector =
-      PoseDetector(options: PoseDetectorOptions());
+  final PoseDetector _poseDetector = PoseDetector(
+      options: PoseDetectorOptions(
+    mode: PoseDetectionMode.stream,
+    model: PoseDetectionModel.accurate,
+  ));
   bool _canProcess = true;
   bool _isBusy = false;
   CustomPaint? customPaint;
