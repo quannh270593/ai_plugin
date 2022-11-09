@@ -453,18 +453,17 @@ class ImageJson {
   }
 
   String posesToJson() {
-    String json = "{";
+    String json = "";
     for (var element in poses) {
       for (var item in element.landmarks.entries) {
         json +=
             "\"${item.key}\": [${item.value.x}, ${item.value.y}, ${item.value.z}],\n";
       }
     }
+    if(json.length<2) return "";
     if (json[json.length - 2] == ",") {
       json = json.substring(0, json.length - 2);
     }
-    json += '\n}';
-    //print("canhdt posesJson: $json");
     return json;
   }
 
@@ -478,7 +477,7 @@ class ImageJson {
     }
 
     String json =
-        "{\"name\": \"$name\",\n \"label\": \"$label\",\n \"landmarks\": ${posesToJson()}}";
+        "{\"name\": \"$name\",\n \"label\": \"$label\",\n \"landmarks\": {${posesToJson()}}\n}";
     return json;
   }
 }
