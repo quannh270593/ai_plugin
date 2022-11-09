@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_mlkit_commons/google_mlkit_commons.dart';
+import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../../main.dart';
@@ -44,32 +44,13 @@ class _CameraViewState extends State<CameraView> {
   final bool _allowPicker = true;
   bool _changingCameraLens = false;
 
-  @override
-  void initState() {
-    super.initState();
+  final PoseDetector _poseDetector = PoseDetector(
+      options: PoseDetectorOptions(
+    mode: PoseDetectionMode.stream,
+    model: PoseDetectionModel.accurate,
+  ));
 
-    _imagePicker = ImagePicker();
-
-    if (cameras.any(
-      (element) =>
-          element.lensDirection == widget.initialDirection &&
-          element.sensorOrientation == 90,
-    )) {
-      _cameraIndex = cameras.indexOf(
-        cameras.firstWhere((element) =>
-            element.lensDirection == widget.initialDirection &&
-            element.sensorOrientation == 90),
-      );
-    } else {
-      _cameraIndex = cameras.indexOf(
-        cameras.firstWhere(
-          (element) => element.lensDirection == widget.initialDirection,
-        ),
-      );
-    }
-
-    _startLiveFeed();
-  }
+  List<ImageJson> listImageJson = [];
 
   @override
   void dispose() {
@@ -79,20 +60,13 @@ class _CameraViewState extends State<CameraView> {
 
   @override
   Widget build(BuildContext context) {
-    if (_controller == null) {
-      return const Scaffold(
-        body: Center(
-          child: Text("loading"),
-        ),
-      );
-    }
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
         actions: [
           if (_allowPicker)
             Padding(
-              padding: EdgeInsets.only(right: 20.0),
+              padding: const EdgeInsets.only(right: 20.0),
               child: GestureDetector(
                 onTap: _switchScreenMode,
                 child: Icon(
@@ -112,23 +86,6 @@ class _CameraViewState extends State<CameraView> {
     );
   }
 
-  Widget? _floatingActionButton() {
-    if (_mode == ScreenMode.gallery) return null;
-    if (cameras.length == 1) return null;
-    return SizedBox(
-        height: 70.0,
-        width: 70.0,
-        child: FloatingActionButton(
-          child: Icon(
-            Platform.isIOS
-                ? Icons.flip_camera_ios_outlined
-                : Icons.flip_camera_android_outlined,
-            size: 40,
-          ),
-          onPressed: _switchLiveCamera,
-        ));
-  }
-
   Widget _body() {
     Widget body;
     if (_mode == ScreenMode.liveFeed) {
@@ -139,7 +96,153 @@ class _CameraViewState extends State<CameraView> {
     return body;
   }
 
+  Widget _imageItem(ImageJson image) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          height: 400,
+          width: 400,
+          child: Stack(
+            fit: StackFit.expand,
+            children: <Widget>[
+              Image.file(File(image.file.path)),
+              if (widget.customPaint != null) widget.customPaint!,
+            ],
+          ),
+        ),
+        TextField(
+          controller: image.nameController,
+          decoration: const InputDecoration(hintText: "name"),
+        ),
+        TextField(
+          controller: image.labelController,
+          decoration: const InputDecoration(hintText: "label"),
+        ),
+      ],
+    );
+  }
+
+  Widget _listImage() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Expanded(
+            child: ListView.builder(
+              // shrinkWrap: false,
+              // physics: const NeverScrollableScrollPhysics(),
+              itemBuilder: (context, index) {
+                return _imageItem(listImageJson[index]);
+              },
+              itemCount: listImageJson.length,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: ElevatedButton(
+              child: const Text('From Gallery'),
+              onPressed: () async => _getImage(ImageSource.gallery),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: ElevatedButton(
+              child: const Text('Take a picture'),
+              onPressed: () => _getImage(ImageSource.camera),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              for (var element in listImageJson) {
+                _processPickedFile(element);
+              }
+            },
+            child: const Text("make json file"),
+          ),
+          TextButton(
+            onPressed: () async {
+              String filePath = "/sdcard/download";
+              String fileName = "poses_json.txt";
+              final File file = File("$filePath/$fileName");
+              await file.delete();
+            },
+            child: const Text("delete old file"),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _galleryBody() {
+    if (_image != null) {
+      return _listImage();
+    }
+    return ListView(shrinkWrap: true, children: [
+      const Icon(
+        Icons.image,
+        size: 200,
+      ),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: ElevatedButton(
+          child: const Text('From Gallery'),
+          onPressed: () async => _getImage(ImageSource.gallery),
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: ElevatedButton(
+          child: const Text('Take a picture'),
+          onPressed: () => _getImage(ImageSource.camera),
+        ),
+      ),
+      if (_image != null)
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(
+              '${_path == null ? '' : 'Image path: $_path'}\n\n${widget.text ?? ''}'),
+        ),
+    ]);
+  }
+
+  Future _getImage(ImageSource source) async {
+    _image = null;
+    _path = null;
+    listImageJson = [];
+    final pickedFile = await _imagePicker?.pickMultiImage();
+    for (var element in pickedFile!) {
+      final inputImage = InputImage.fromFilePath(element.path);
+      final poses = await _poseDetector.processImage(inputImage);
+      final name = inputImage.filePath?.split("/").last ?? "";
+      ImageJson json = ImageJson();
+      json.name = name;
+      json.label = "temp";
+      json.poses = poses;
+      json.file = element;
+      listImageJson.add(json);
+    }
+    print("canhdt listImageJson ${listImageJson.length}");
+    setState(() {
+      _image = File(pickedFile.first.path);
+    });
+  }
+
+  Future _processPickedFile(ImageJson image) async {
+    ///write to local(final)
+    String filePath = "/sdcard/download";
+    String fileName = "poses_json.txt";
+    final File file = File("$filePath/$fileName");
+    await file.writeAsString('\n${image.toJson()}\n', mode: FileMode.append);
+  }
+
   Widget _liveFeedBody() {
+    if (_controller == null) {
+      return const Center(
+        child: Text("loading"),
+      );
+    }
     if (_controller?.value.isInitialized == false) {
       return Container();
     }
@@ -163,8 +266,8 @@ class _CameraViewState extends State<CameraView> {
             scale: scale,
             child: Center(
               child: _changingCameraLens
-                  ? Center(
-                      child: const Text('Changing camera lens'),
+                  ? const Center(
+                      child: Text('Changing camera lens'),
                     )
                   : CameraPreview(_controller!),
             ),
@@ -175,7 +278,7 @@ class _CameraViewState extends State<CameraView> {
             child: Text(
               widget.count,
               // "ccccc",
-              style: TextStyle(fontSize: 30, color: Colors.red),
+              style: const TextStyle(fontSize: 30, color: Colors.red),
             ),
           ),
           if (widget.customPaint != null) widget.customPaint!,
@@ -203,57 +306,21 @@ class _CameraViewState extends State<CameraView> {
     );
   }
 
-  Widget _galleryBody() {
-    return ListView(shrinkWrap: true, children: [
-      _image != null
-          ? SizedBox(
-              height: 400,
-              width: 400,
-              child: Stack(
-                fit: StackFit.expand,
-                children: <Widget>[
-                  Image.file(_image!),
-                  if (widget.customPaint != null) widget.customPaint!,
-                ],
-              ),
-            )
-          : Icon(
-              Icons.image,
-              size: 200,
-            ),
-      Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16),
-        child: ElevatedButton(
-          child: Text('From Gallery'),
-          onPressed: () => _getImage(ImageSource.gallery),
-        ),
-      ),
-      Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16),
-        child: ElevatedButton(
-          child: Text('Take a picture'),
-          onPressed: () => _getImage(ImageSource.camera),
-        ),
-      ),
-      if (_image != null)
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Text(
-              '${_path == null ? '' : 'Image path: $_path'}\n\n${widget.text ?? ''}'),
-        ),
-    ]);
-  }
-
-  Future _getImage(ImageSource source) async {
-    setState(() {
-      _image = null;
-      _path = null;
-    });
-    final pickedFile = await _imagePicker?.pickImage(source: source);
-    if (pickedFile != null) {
-      _processPickedFile(pickedFile);
-    }
-    setState(() {});
+  Widget? _floatingActionButton() {
+    if (_mode == ScreenMode.gallery) return null;
+    if (cameras.length == 1) return null;
+    return SizedBox(
+        height: 70.0,
+        width: 70.0,
+        child: FloatingActionButton(
+          onPressed: _switchLiveCamera,
+          child: Icon(
+            Platform.isIOS
+                ? Icons.flip_camera_ios_outlined
+                : Icons.flip_camera_android_outlined,
+            size: 40,
+          ),
+        ));
   }
 
   void _switchScreenMode() {
@@ -293,34 +360,6 @@ class _CameraViewState extends State<CameraView> {
       _controller?.startImageStream(_processCameraImage);
       setState(() {});
     });
-  }
-
-  Future _stopLiveFeed() async {
-    await _controller?.stopImageStream();
-    await _controller?.dispose();
-    _controller = null;
-  }
-
-  Future _switchLiveCamera() async {
-    setState(() => _changingCameraLens = true);
-    _cameraIndex = (_cameraIndex + 1) % cameras.length;
-
-    await _stopLiveFeed();
-    await _startLiveFeed();
-    setState(() => _changingCameraLens = false);
-  }
-
-  Future _processPickedFile(XFile? pickedFile) async {
-    final path = pickedFile?.path;
-    if (path == null) {
-      return;
-    }
-    setState(() {
-      _image = File(path);
-    });
-    _path = path;
-    final inputImage = InputImage.fromFilePath(path);
-    widget.onImage(inputImage);
   }
 
   Future _processCameraImage(CameraImage image) async {
@@ -363,5 +402,91 @@ class _CameraViewState extends State<CameraView> {
         InputImage.fromBytes(bytes: bytes, inputImageData: inputImageData);
 
     widget.onImage(inputImage);
+  }
+
+  Future _stopLiveFeed() async {
+    await _controller?.stopImageStream();
+    await _controller?.dispose();
+    _controller = null;
+  }
+
+  Future _switchLiveCamera() async {
+    setState(() => _changingCameraLens = true);
+    _cameraIndex = (_cameraIndex + 1) % cameras.length;
+
+    await _stopLiveFeed();
+    await _startLiveFeed();
+    setState(() => _changingCameraLens = false);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    _imagePicker = ImagePicker();
+
+    if (cameras.any(
+      (element) =>
+          element.lensDirection == widget.initialDirection &&
+          element.sensorOrientation == 90,
+    )) {
+      _cameraIndex = cameras.indexOf(
+        cameras.firstWhere((element) =>
+            element.lensDirection == widget.initialDirection &&
+            element.sensorOrientation == 90),
+      );
+    } else {
+      _cameraIndex = cameras.indexOf(
+        cameras.firstWhere(
+          (element) => element.lensDirection == widget.initialDirection,
+        ),
+      );
+    }
+
+    _startLiveFeed();
+  }
+}
+
+class ImageJson {
+  String name = "";
+  String label = "";
+  late XFile file;
+  List<Pose> poses = [];
+  late TextEditingController nameController;
+  late TextEditingController labelController;
+
+  ImageJson() {
+    nameController = TextEditingController();
+    labelController = TextEditingController();
+  }
+
+  String posesToJson() {
+    String json = "{";
+    for (var element in poses) {
+      for (var item in element.landmarks.entries) {
+        json +=
+            "'${item.key}': [${item.value.x}, ${item.value.y}, ${item.value.z}],";
+      }
+    }
+    if (json[json.length - 1] == ",") {
+      json = json.substring(0, json.length - 1);
+    }
+    json += '}';
+    //print("canhdt posesJson: $json");
+    return json;
+  }
+
+  String toJson() {
+    if (nameController.text != "") {
+      name = nameController.text;
+    }
+
+    if (labelController.text != "") {
+      label = labelController.text;
+    }
+
+    String json =
+        "{'name': '$name',\n 'label': '$label',\n 'landmarks': ${posesToJson()}}";
+    return json;
   }
 }
