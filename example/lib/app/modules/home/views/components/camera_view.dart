@@ -3,7 +3,9 @@ import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_commons/google_mlkit_commons.dart';
+import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../../../../main.dart';
 
@@ -92,7 +94,7 @@ class _CameraViewState extends State<CameraView> {
         actions: [
           if (_allowPicker)
             Padding(
-              padding: EdgeInsets.only(right: 20.0),
+              padding: const EdgeInsets.only(right: 20.0),
               child: GestureDetector(
                 onTap: _switchScreenMode,
                 child: Icon(
@@ -119,13 +121,13 @@ class _CameraViewState extends State<CameraView> {
         height: 70.0,
         width: 70.0,
         child: FloatingActionButton(
+          onPressed: _switchLiveCamera,
           child: Icon(
             Platform.isIOS
                 ? Icons.flip_camera_ios_outlined
                 : Icons.flip_camera_android_outlined,
             size: 40,
           ),
-          onPressed: _switchLiveCamera,
         ));
   }
 
@@ -163,8 +165,8 @@ class _CameraViewState extends State<CameraView> {
             scale: scale,
             child: Center(
               child: _changingCameraLens
-                  ? Center(
-                      child: const Text('Changing camera lens'),
+                  ? const Center(
+                      child: Text('Changing camera lens'),
                     )
                   : CameraPreview(_controller!),
             ),
@@ -175,7 +177,7 @@ class _CameraViewState extends State<CameraView> {
             child: Text(
               widget.count,
               // "ccccc",
-              style: TextStyle(fontSize: 30, color: Colors.red),
+              style: const TextStyle(fontSize: 30, color: Colors.red),
             ),
           ),
           if (widget.customPaint != null) widget.customPaint!,
@@ -217,19 +219,19 @@ class _CameraViewState extends State<CameraView> {
                 ],
               ),
             )
-          : Icon(
+          : const Icon(
               Icons.image,
               size: 200,
             ),
       Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         child: ElevatedButton(
-          child: Text('From Gallery'),
-          onPressed: () => _getImage(ImageSource.gallery),
+          child: const Text('From Gallery'),
+          onPressed: () async => _getImage(ImageSource.gallery),
         ),
       ),
       Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         child: ElevatedButton(
           child: Text('Take a picture'),
           onPressed: () => _getImage(ImageSource.camera),
@@ -249,9 +251,12 @@ class _CameraViewState extends State<CameraView> {
       _image = null;
       _path = null;
     });
-    final pickedFile = await _imagePicker?.pickImage(source: source);
+    final pickedFile = await _imagePicker?.pickMultiImage();
     if (pickedFile != null) {
-      _processPickedFile(pickedFile);
+      print("canhdt image !null");
+      pickedFile.forEach((element) {
+        _processPickedFile(element);
+      });
     }
     setState(() {});
   }
@@ -310,9 +315,16 @@ class _CameraViewState extends State<CameraView> {
     setState(() => _changingCameraLens = false);
   }
 
+  final PoseDetector _poseDetector = PoseDetector(
+      options: PoseDetectorOptions(
+    mode: PoseDetectionMode.stream,
+    model: PoseDetectionModel.accurate,
+  ));
+
   Future _processPickedFile(XFile? pickedFile) async {
     final path = pickedFile?.path;
     if (path == null) {
+      print("canhdt path null");
       return;
     }
     setState(() {
@@ -320,7 +332,22 @@ class _CameraViewState extends State<CameraView> {
     });
     _path = path;
     final inputImage = InputImage.fromFilePath(path);
-    widget.onImage(inputImage);
+    final poses = await _poseDetector.processImage(inputImage);
+    final name = inputImage.filePath?.split("/").last ?? "";
+
+    ///make json here
+    //List<double> listPose = [];
+    ImageJson json = ImageJson();
+    json.name = name;
+    json.label = "temp";
+    json.poses = poses;
+    print("canhdt ${json.toJson()}");
+
+    ///write to local(final)
+    String filePath = "/sdcard/download";
+    String fileName = "poses_json.txt";
+    final File file = File("$filePath/$fileName");
+    file.writeAsStringSync('${json.toJson()}\n');
   }
 
   Future _processCameraImage(CameraImage image) async {
@@ -363,5 +390,33 @@ class _CameraViewState extends State<CameraView> {
         InputImage.fromBytes(bytes: bytes, inputImageData: inputImageData);
 
     widget.onImage(inputImage);
+  }
+}
+
+class ImageJson {
+  String name = "";
+  String label = "";
+  List<Pose> poses = [];
+
+  String posesToJson() {
+    String json = "{";
+    poses.forEach((element) {
+      for (var item in element.landmarks.entries) {
+        json +=
+            "'${item.key}': [${item.value.x}, ${item.value.y}, ${item.value.z}],";
+      }
+    });
+    if (json[json.length - 1] == ",") {
+      json = json.substring(0, json.length - 1);
+    }
+    json += '}';
+    //print("canhdt posesJson: $json");
+    return json;
+  }
+
+  String toJson() {
+    String json =
+        "{'name': '$name',\n 'label': '$label',\n 'landmarks':  ${posesToJson()}}";
+    return json;
   }
 }
