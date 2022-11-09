@@ -12,7 +12,9 @@ Future<void> main() async {
   //       initialRoute: AppPages.INITIAL,
   //       getPages: AppPages.routes,
   //     ));
-  runApp(MaterialApp(home: MainApp(),));
+  runApp(MaterialApp(
+    home: MainApp(),
+  ));
 }
 
 class MainApp extends StatefulWidget {
@@ -58,7 +60,8 @@ class _MainAppState extends State<MainApp> {
             //   initialRoute: AppPages.INITIAL,
             //   getPages: AppPages.routes,
             // ));
-            Navigator.push(context, MaterialPageRoute(builder: (context) => HomeView()));
+            Navigator.push(
+                context, MaterialPageRoute(builder: (context) => HomeView()));
           },
           child: Container(
             padding: EdgeInsets.all(20),
@@ -74,5 +77,4 @@ class _MainAppState extends State<MainApp> {
     controller.dispose();
     super.dispose();
   }
-
 }

@@ -51,6 +51,8 @@ class _CameraViewState extends State<CameraView> {
   ));
 
   List<ImageJson> listImageJson = [];
+  String filePath = "/sdcard/download";
+  String fileName = "poses_json.txt";
 
   @override
   void dispose() {
@@ -146,32 +148,52 @@ class _CameraViewState extends State<CameraView> {
               onPressed: () async => _getImage(ImageSource.gallery),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: ElevatedButton(
-              child: const Text('Take a picture'),
-              onPressed: () => _getImage(ImageSource.camera),
-            ),
-          ),
           TextButton(
-            onPressed: () {
-              for (var element in listImageJson) {
-                _processPickedFile(element);
+            onPressed: () async {
+              final File file = File("$filePath/$fileName");
+              file.writeAsStringSync('[\n');
+              for (int i = 0; i < listImageJson.length; i++) {
+                await _processPickedFile(listImageJson[i]);
+                if (i < listImageJson.length - 1) {
+                  file.writeAsStringSync(',\n', mode: FileMode.append);
+                }
               }
+              file.writeAsStringSync(']\n', mode: FileMode.append);
             },
             child: const Text("make json file"),
           ),
-          TextButton(
-            onPressed: () async {
-              String filePath = "/sdcard/download";
-              String fileName = "poses_json.txt";
-              final File file = File("$filePath/$fileName");
-              await file.delete();
-            },
-            child: const Text("delete old file"),
-          )
         ],
       ),
+    );
+  }
+
+  Future _getImage(ImageSource source) async {
+    _image = null;
+    _path = null;
+    listImageJson = [];
+    final pickedFile = await _imagePicker?.pickMultiImage();
+    for (var element in pickedFile!) {
+      final inputImage = InputImage.fromFilePath(element.path);
+      final poses = await _poseDetector.processImage(inputImage);
+      final name = inputImage.filePath?.split("/").last ?? "";
+      ImageJson json = ImageJson();
+      json.name = name;
+      json.label = "temp";
+      json.poses = poses;
+      json.file = element;
+      listImageJson.add(json);
+    }
+    setState(() {
+      _image = File(pickedFile.first.path);
+    });
+  }
+
+  Future _processPickedFile(ImageJson image) async {
+    ///write to local(final)
+    final File file = File("$filePath/$fileName");
+    file.writeAsStringSync(
+      image.toJson(),
+      mode: FileMode.append,
     );
   }
 
@@ -205,36 +227,6 @@ class _CameraViewState extends State<CameraView> {
               '${_path == null ? '' : 'Image path: $_path'}\n\n${widget.text ?? ''}'),
         ),
     ]);
-  }
-
-  Future _getImage(ImageSource source) async {
-    _image = null;
-    _path = null;
-    listImageJson = [];
-    final pickedFile = await _imagePicker?.pickMultiImage();
-    for (var element in pickedFile!) {
-      final inputImage = InputImage.fromFilePath(element.path);
-      final poses = await _poseDetector.processImage(inputImage);
-      final name = inputImage.filePath?.split("/").last ?? "";
-      ImageJson json = ImageJson();
-      json.name = name;
-      json.label = "temp";
-      json.poses = poses;
-      json.file = element;
-      listImageJson.add(json);
-    }
-    print("canhdt listImageJson ${listImageJson.length}");
-    setState(() {
-      _image = File(pickedFile.first.path);
-    });
-  }
-
-  Future _processPickedFile(ImageJson image) async {
-    ///write to local(final)
-    String filePath = "/sdcard/download";
-    String fileName = "poses_json.txt";
-    final File file = File("$filePath/$fileName");
-    await file.writeAsString('\n${image.toJson()}\n', mode: FileMode.append);
   }
 
   Widget _liveFeedBody() {
