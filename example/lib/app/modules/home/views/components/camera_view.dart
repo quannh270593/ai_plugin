@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../../../../main.dart';
 
@@ -52,7 +53,8 @@ class _CameraViewState extends State<CameraView> {
 
   List<ImageJson> listImageJson = [];
   String filePath = "/sdcard/download";
-  String fileName = "poses_json.txt";
+  String fileName = "poses_json.json";
+  TextEditingController labelController = TextEditingController();
 
   @override
   void dispose() {
@@ -90,6 +92,10 @@ class _CameraViewState extends State<CameraView> {
 
   Widget _body() {
     Widget body;
+    // if(true){
+    //   body = _galleryBody();
+    // }
+    // else
     if (_mode == ScreenMode.liveFeed) {
       body = _liveFeedBody();
     } else {
@@ -113,14 +119,14 @@ class _CameraViewState extends State<CameraView> {
             ],
           ),
         ),
-        TextField(
-          controller: image.nameController,
-          decoration: const InputDecoration(hintText: "name"),
-        ),
-        TextField(
-          controller: image.labelController,
-          decoration: const InputDecoration(hintText: "label"),
-        ),
+        // TextField(
+        //   controller: image.nameController,
+        //   decoration: const InputDecoration(hintText: "name"),
+        // ),
+        // TextField(
+        //   controller: image.labelController,
+        //   decoration: const InputDecoration(hintText: "label"),
+        // ),
       ],
     );
   }
@@ -148,8 +154,22 @@ class _CameraViewState extends State<CameraView> {
               onPressed: () async => _getImage(ImageSource.gallery),
             ),
           ),
+          Text("Image count: ${listImageJson.length}"),
+          TextField(
+            controller: labelController,
+            decoration: const InputDecoration(hintText: "label"),
+          ),
           TextButton(
             onPressed: () async {
+              // ///ios
+              // if(Platform.isIOS){
+              //
+              //
+              //   return;
+              // }
+              final directory = await getApplicationDocumentsDirectory();
+              filePath = directory.path;
+              print("canhdt filePath: $filePath");
               final File file = File("$filePath/$fileName");
               file.writeAsStringSync('[\n');
               for (int i = 0; i < listImageJson.length; i++) {
@@ -188,8 +208,19 @@ class _CameraViewState extends State<CameraView> {
     });
   }
 
+  Future _processPickedFileIos(ImageJson image) async {
+    ///write to local(final)
+    image.label = labelController.text;
+    final File file = File("$filePath/$fileName");
+    file.writeAsStringSync(
+      image.toJson(),
+      mode: FileMode.append,
+    );
+  }
+
   Future _processPickedFile(ImageJson image) async {
     ///write to local(final)
+    image.label = labelController.text;
     final File file = File("$filePath/$fileName");
     file.writeAsStringSync(
       image.toJson(),
@@ -460,7 +491,7 @@ class ImageJson {
             "\"${item.key}\": [${item.value.x}, ${item.value.y}, ${item.value.z}],\n";
       }
     }
-    if(json.length<2) return "";
+    if (json.length < 2) return "";
     if (json[json.length - 2] == ",") {
       json = json.substring(0, json.length - 2);
     }
@@ -468,13 +499,13 @@ class ImageJson {
   }
 
   String toJson() {
-    if (nameController.text != "") {
-      name = nameController.text;
-    }
+    // if (nameController.text != "") {
+    //   name = nameController.text;
+    // }
 
-    if (labelController.text != "") {
-      label = labelController.text;
-    }
+    // if (labelController.text != "") {
+    //   label = labelController.text;
+    // }
 
     String json =
         "{\"name\": \"$name\",\n \"label\": \"$label\",\n \"landmarks\": {${posesToJson()}}\n}";

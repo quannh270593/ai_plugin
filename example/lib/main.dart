@@ -1,6 +1,7 @@
 import 'package:ai_plugin_example/app/modules/home/views/home_view.dart';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 List<CameraDescription> cameras = [];
 
@@ -25,28 +26,35 @@ class MainApp extends StatefulWidget {
 }
 
 class _MainAppState extends State<MainApp> {
-  late CameraController controller;
+  //late CameraController controller;
 
+  @override
   void initState() {
     super.initState();
-    controller = CameraController(cameras[0], ResolutionPreset.max);
-    controller.initialize().then((_) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {});
-    }).catchError((Object e) {
-      if (e is CameraException) {
-        switch (e.code) {
-          case 'CameraAccessDenied':
-            print('User denied camera access.');
-            break;
-          default:
-            print('Handle other errors.');
-            break;
-        }
-      }
-    });
+    // if(cameras.isNotEmpty){
+    //   controller = CameraController(cameras[0], ResolutionPreset.max);
+    // }
+    //
+    // controller.initialize().then((_) {
+    //   if (!mounted) {
+    //     return;
+    //   }
+    //   setState(() {});
+    // }).catchError((Object e) {
+    //   if (e is CameraException) {
+    //     switch (e.code) {
+    //       case 'CameraAccessDenied':
+    //         print('User denied camera access.');
+    //         break;
+    //       default:
+    //         print('Handle other errors.');
+    //         break;
+    //     }
+    //   }
+    // });
+
+    Permission.storage.request();
+    Permission.camera.request();
   }
 
   @override
@@ -74,7 +82,7 @@ class _MainAppState extends State<MainApp> {
 
   @override
   void dispose() {
-    controller.dispose();
+    //controller.dispose();
     super.dispose();
   }
 }
