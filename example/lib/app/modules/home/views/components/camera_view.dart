@@ -1,10 +1,13 @@
 import 'dart:io';
+import 'package:ai_plugin_example/app/modules/home/views/components/pose_painter.dart';
 import 'package:camera/camera.dart';
+import 'package:exif/exif.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:image/image.dart' as img;
 
 import '../../../../../main.dart';
 
@@ -35,7 +38,7 @@ class CameraView extends StatefulWidget {
 }
 
 class _CameraViewState extends State<CameraView> {
-  ScreenMode _mode = ScreenMode.liveFeed;
+  ScreenMode _mode = ScreenMode.gallery;
   CameraController? _controller;
   File? _image;
   String? _path;
@@ -44,6 +47,8 @@ class _CameraViewState extends State<CameraView> {
   double zoomLevel = 0.0, minZoomLevel = 0.0, maxZoomLevel = 0.0;
   final bool _allowPicker = true;
   bool _changingCameraLens = false;
+
+  bool loading = false;
 
   final PoseDetector _poseDetector = PoseDetector(
       options: PoseDetectorOptions(
@@ -92,10 +97,6 @@ class _CameraViewState extends State<CameraView> {
 
   Widget _body() {
     Widget body;
-    // if(true){
-    //   body = _galleryBody();
-    // }
-    // else
     if (_mode == ScreenMode.liveFeed) {
       body = _liveFeedBody();
     } else {
@@ -104,7 +105,8 @@ class _CameraViewState extends State<CameraView> {
     return body;
   }
 
-  Widget _imageItem(ImageJson image) {
+  Widget _imageItem(ImageJson image, int index) {
+    var imageView = Image.file(File(image.file.path));
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -114,19 +116,18 @@ class _CameraViewState extends State<CameraView> {
           child: Stack(
             fit: StackFit.expand,
             children: <Widget>[
-              Image.file(File(image.file.path)),
-              if (widget.customPaint != null) widget.customPaint!,
+              imageView,
+              if (image.paint != null) image.paint!,
             ],
           ),
         ),
-        // TextField(
-        //   controller: image.nameController,
-        //   decoration: const InputDecoration(hintText: "name"),
-        // ),
-        // TextField(
-        //   controller: image.labelController,
-        //   decoration: const InputDecoration(hintText: "label"),
-        // ),
+        TextButton(
+          onPressed: () {
+            listImageJson.removeAt(index);
+            setState(() {});
+          },
+          child: const Text("Delete"),
+        ),
       ],
     );
   }
@@ -139,10 +140,8 @@ class _CameraViewState extends State<CameraView> {
         children: [
           Expanded(
             child: ListView.builder(
-              // shrinkWrap: false,
-              // physics: const NeverScrollableScrollPhysics(),
               itemBuilder: (context, index) {
-                return _imageItem(listImageJson[index]);
+                return _imageItem(listImageJson[index], index);
               },
               itemCount: listImageJson.length,
             ),
@@ -151,7 +150,9 @@ class _CameraViewState extends State<CameraView> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: ElevatedButton(
               child: const Text('From Gallery'),
-              onPressed: () async => _getImage(ImageSource.gallery),
+              onPressed: () async {
+                _getImage(ImageSource.gallery);
+              },
             ),
           ),
           Text("Image count: ${listImageJson.length}"),
@@ -161,12 +162,6 @@ class _CameraViewState extends State<CameraView> {
           ),
           TextButton(
             onPressed: () async {
-              // ///ios
-              // if(Platform.isIOS){
-              //
-              //
-              //   return;
-              // }
               final directory = await getApplicationDocumentsDirectory();
               filePath = directory.path;
               print("canhdt filePath: $filePath");
@@ -188,12 +183,18 @@ class _CameraViewState extends State<CameraView> {
   }
 
   Future _getImage(ImageSource source) async {
-    _image = null;
+    //_image = null;
     _path = null;
     listImageJson = [];
     final pickedFile = await _imagePicker?.pickMultiImage();
     for (var element in pickedFile!) {
+      File image = File(element.path);
+      img.Image? decodedImage = img.decodeImage(image.readAsBytesSync());
+      final orientation = img.bakeOrientation(decodedImage!);
+      await image.writeAsBytes(img.encodeJpg(orientation));
+
       final inputImage = InputImage.fromFilePath(element.path);
+
       final poses = await _poseDetector.processImage(inputImage);
       final name = inputImage.filePath?.split("/").last ?? "";
       ImageJson json = ImageJson();
@@ -202,20 +203,25 @@ class _CameraViewState extends State<CameraView> {
       json.poses = poses;
       json.file = element;
       listImageJson.add(json);
-    }
-    setState(() {
-      _image = File(pickedFile.first.path);
-    });
-  }
 
-  Future _processPickedFileIos(ImageJson image) async {
-    ///write to local(final)
-    image.label = labelController.text;
-    final File file = File("$filePath/$fileName");
-    file.writeAsStringSync(
-      image.toJson(),
-      mode: FileMode.append,
-    );
+      Size size = Size(
+        decodedImage.width.toDouble(),
+        decodedImage.height.toDouble(),
+      );
+      print("Size: $size");
+      final painter = PosePainter(
+        poses,
+        size,
+        InputImageRotation.rotation0deg,
+      );
+      json.paint = CustomPaint(painter: painter);
+    }
+    if (_image == null) {
+      print("canhdt setstate");
+      setState(() {
+        _image = File(pickedFile.first.path);
+      });
+    }
   }
 
   Future _processPickedFile(ImageJson image) async {
@@ -241,7 +247,9 @@ class _CameraViewState extends State<CameraView> {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: ElevatedButton(
           child: const Text('From Gallery'),
-          onPressed: () async => _getImage(ImageSource.gallery),
+          onPressed: () async {
+            _getImage(ImageSource.gallery);
+          },
         ),
       ),
       Padding(
@@ -258,6 +266,15 @@ class _CameraViewState extends State<CameraView> {
               '${_path == null ? '' : 'Image path: $_path'}\n\n${widget.text ?? ''}'),
         ),
     ]);
+  }
+
+  Future<void> _showMyDialog() async {
+    return showDialog(
+      context: context,
+      builder: (context) {
+        return Icon(Icons.download);
+      },
+    );
   }
 
   Widget _liveFeedBody() {
@@ -478,6 +495,8 @@ class ImageJson {
   late TextEditingController nameController;
   late TextEditingController labelController;
 
+  CustomPaint? paint;
+
   ImageJson() {
     nameController = TextEditingController();
     labelController = TextEditingController();
@@ -499,14 +518,6 @@ class ImageJson {
   }
 
   String toJson() {
-    // if (nameController.text != "") {
-    //   name = nameController.text;
-    // }
-
-    // if (labelController.text != "") {
-    //   label = labelController.text;
-    // }
-
     String json =
         "{\"name\": \"$name\",\n \"label\": \"$label\",\n \"landmarks\": {${posesToJson()}}\n}";
     return json;

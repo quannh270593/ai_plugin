@@ -43,15 +43,24 @@ class HomeController extends GetxController {
   }
 
   Future<void> processImage(InputImage inputImage) async {
-    if (!_canProcess) return;
-    if (_isBusy) return;
+    if (!_canProcess) {
+      //print("canhdt !_canProcess");
+      return;
+    }
+    if (_isBusy) {
+      //print("canhdt !_isBusy");
+      return;
+    }
     _isBusy = true;
 
     final poses = await _poseDetector.processImage(inputImage);
     if (inputImage.inputImageData?.size != null &&
         inputImage.inputImageData?.imageRotation != null) {
-      final painter = PosePainter(poses, inputImage.inputImageData!.size,
-          inputImage.inputImageData!.imageRotation);
+      final painter = PosePainter(
+        poses,
+        inputImage.inputImageData!.size,
+        inputImage.inputImageData!.imageRotation,
+      );
       aiPlugin.pushPoseData(poses);
       customPaint = CustomPaint(painter: painter);
     } else {
