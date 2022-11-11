@@ -1,3 +1,5 @@
+import 'package:ai_plugin_example/app/modules/adjust_camera/adjust_camera_view.dart';
+import 'package:ai_plugin_example/app/modules/adjust_camera/binding/adjust_camera_binding.dart';
 import 'package:ai_plugin_example/main.dart';
 import 'package:get/get.dart';
 
@@ -19,9 +21,13 @@ class AppPages {
     ),
   ];
   static final mainRoutes = [
+    GetPage(name: _Paths.MAIN, page: () => MainApp()),
+  ];
+  static final adjustRoutes = [
     GetPage(
-      name: _Paths.MAIN,
-      page: () => MainApp()
+      name: _Paths.ADJUST,
+      page: () => AdjustCameraView(),
+      binding: AdjustCameraBinding(),
     ),
   ];
 }
