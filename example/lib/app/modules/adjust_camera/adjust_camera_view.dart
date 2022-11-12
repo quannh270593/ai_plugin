@@ -10,51 +10,53 @@ class AdjustCameraView extends GetView<AdjustCameraController> {
   Widget build(BuildContext context) {
     Get.put(AdjustCameraController());
     return Scaffold(
-      appBar: AppBar(),
+      //appBar: AppBar(),
       body: SafeArea(
-        child: _cameraView(),
+        child: _cameraView(context),
       ),
     );
   }
 
-  Widget _cameraView() {
+  Widget _cameraView(BuildContext context) {
     return Obx(() {
       var cameraController = controller.cameraController.value;
-      var mainRatio = 1.0;
-      //var height = controller.cameraViewHeight.value;
-      var height;
+      var fitPercent = controller.percentFit.value.toString();
       var scale = 0.0;
       Widget camera = Container();
-      if (cameraController != null) {
-        camera = LayoutBuilder(builder: (context, constraints) {
-          mainRatio = constraints.maxHeight / constraints.maxWidth;
-          scale = cameraController.value.aspectRatio / mainRatio;
-          //controller.cameraViewHeight.value = height * scale;
-          height = constraints.maxHeight * scale;
-          return Transform.scale(
-            //scale: mainRatio / cameraController.value.aspectRatio,
-            scale: 1,
-            child: CameraPreview(cameraController),
-          );
-        });
+      if (cameraController == null || cameraController.value.previewSize == null) {
+        return Container();
       }
+
+      ///this scale uses for camera view full scr
+      ///replace size by widget size if not full screen
+      final size = MediaQuery.of(context).size;
+      scale = size.aspectRatio * cameraController.value.aspectRatio;
+      if (scale < 1) scale = 1 / scale;
+      camera = Transform.scale(
+        scale: scale,
+        child: CameraPreview(cameraController),
+      );
+
       return SizedBox(
-        height: height,
+        //height: 500,
         child: Stack(
           children: [
-            Container(
-              color: Colors.black12,
-            ),
             Center(child: camera),
             Center(
               child: Transform.scale(
-                scale: 1,
+                scale: 1 * scale * 0.7,
                 child: Image.asset(
                   "assets/body_outline.png",
-                  color: Colors.red,
+                  color: Colors.pink,
                 ),
               ),
-            )
+            ),
+            Center(
+              child: Text(
+                fitPercent,
+                style: TextStyle(fontSize: 30),
+              ),
+            ),
           ],
         ),
       );

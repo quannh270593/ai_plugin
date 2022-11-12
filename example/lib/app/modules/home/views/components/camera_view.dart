@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:ai_plugin_example/app/modules/home/views/components/pose_painter.dart';
 import 'package:camera/camera.dart';
-import 'package:exif/exif.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';

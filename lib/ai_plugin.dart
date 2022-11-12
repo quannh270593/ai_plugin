@@ -5,8 +5,23 @@ import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 import 'ai_plugin_platform_interface.dart';
 
 class AiPlugin {
+  late void Function(int) countCallback;
+  late void Function(int) adjustCameraCallback;
+
   Future<String?> getPlatformVersion() {
     return AiPluginPlatform.instance.getPlatformVersion();
+  }
+
+  ///poses will pushed real time from local
+  void pushAdjustCameraData(List<Pose> poses, double width, double height) {
+    int percent = 0;
+
+    ///count here
+    ///fake data
+    percent = Random().nextInt(100);
+
+    ///return data to local throw callback
+    adjustCameraCallback.call(percent);
   }
 
   ///poses will pushed real time from local
@@ -20,6 +35,4 @@ class AiPlugin {
     ///return data to local throw callback
     countCallback.call(count);
   }
-
-  late void Function(int) countCallback;
 }
