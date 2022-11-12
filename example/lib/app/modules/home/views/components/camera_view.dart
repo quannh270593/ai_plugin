@@ -181,11 +181,16 @@ class _CameraViewState extends State<CameraView> {
     );
   }
 
+  BuildContext? dialogContext;
+  var pickedFile;
+
   Future _getImage(ImageSource source) async {
     //_image = null;
+
     _path = null;
     listImageJson = [];
-    final pickedFile = await _imagePicker?.pickMultiImage();
+    pickedFile = await _imagePicker?.pickMultiImage();
+
     for (var element in pickedFile!) {
       File image = File(element.path);
       img.Image? decodedImage = img.decodeImage(image.readAsBytesSync());
@@ -193,7 +198,7 @@ class _CameraViewState extends State<CameraView> {
       await image.writeAsBytes(img.encodeJpg(orientation));
 
       final inputImage = InputImage.fromFilePath(element.path);
-
+      _showMyDialog();
       final poses = await _poseDetector.processImage(inputImage);
       final name = inputImage.filePath?.split("/").last ?? "";
       ImageJson json = ImageJson();
@@ -207,7 +212,6 @@ class _CameraViewState extends State<CameraView> {
         decodedImage.width.toDouble(),
         decodedImage.height.toDouble(),
       );
-      print("Size: $size");
       final painter = PosePainter(
         poses,
         size,
@@ -215,8 +219,12 @@ class _CameraViewState extends State<CameraView> {
       );
       json.paint = CustomPaint(painter: painter);
     }
+
+    if (dialogContext != null) {
+      Navigator.pop(dialogContext!);
+      dialogContext = null;
+    }
     if (_image == null) {
-      print("canhdt setstate");
       setState(() {
         _image = File(pickedFile.first.path);
       });
@@ -268,10 +276,16 @@ class _CameraViewState extends State<CameraView> {
   }
 
   Future<void> _showMyDialog() async {
+    if (dialogContext != null) {
+      Navigator.pop(dialogContext!);
+      dialogContext = null;
+    }
     return showDialog(
       context: context,
       builder: (context) {
-        return Icon(Icons.download);
+        dialogContext = context;
+        String mes = "${listImageJson.length}/${pickedFile.length}";
+        return Center(child: Text(mes));
       },
     );
   }
