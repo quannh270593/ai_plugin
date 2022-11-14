@@ -86,8 +86,16 @@ class AdjustCameraController extends GetxController {
     final inputImage =
         InputImage.fromBytes(bytes: bytes, inputImageData: inputImageData);
     final poses = await _poseDetector.processImage(inputImage);
+    var imageWidth = image.width.toDouble();
+    var imageHeight = image.height.toDouble();
 
-    aiPlugin.pushAdjustCameraData(poses, image.width.toDouble(), image.height.toDouble());
+    //print("canhdt $imageWidth $imageHeight");
+    int y = (imageHeight * 0.3).round();
+    int x = (imageWidth / 2).round();
+    x = x - ((imageHeight * 0.7) / 8).round();
+    int x1 = (imageWidth / 2).round() + ((imageHeight * 0.7) / 8).round();
+    int y1 = imageHeight.round() - (imageHeight * 0.3).round();
+    aiPlugin.pushAdjustCameraData(poses, x, y, x1, y1);
 
     adjusting = false;
   }
