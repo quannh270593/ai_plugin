@@ -62,4 +62,10 @@ class AdjustCameraView extends GetView<AdjustCameraController> {
       );
     });
   }
+
+  // @override
+  // void onClose() {
+  //   super.onClose();
+  //   //cameraController.value?.dispose();
+  // }
 }

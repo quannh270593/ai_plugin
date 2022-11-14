@@ -61,7 +61,7 @@ class AdjustCameraController extends GetxController {
     final Size imageSize =
         Size(image.width.toDouble(), image.height.toDouble());
     final camera = cameras[cameraIndex.toInt()];
-    final imageRotation =
+    final imageRotation = //InputImageRotation.rotation;
         InputImageRotationValue.fromRawValue(camera.sensorOrientation);
     if (imageRotation == null) return;
     final inputImageFormat =
@@ -88,15 +88,25 @@ class AdjustCameraController extends GetxController {
     final poses = await _poseDetector.processImage(inputImage);
     var imageWidth = image.width.toDouble();
     var imageHeight = image.height.toDouble();
-
-    //print("canhdt $imageWidth $imageHeight");
-    int y = (imageHeight * 0.3).round();
-    int x = (imageWidth / 2).round();
+    if (imageRotation == InputImageRotation.rotation90deg ||
+        imageRotation == InputImageRotation.rotation270deg) {
+      var temp = imageWidth;
+      imageWidth = imageHeight;
+      imageHeight = temp;
+    }
+    int y = ((imageHeight * 0.3) / 2).round();
+    int x = (imageWidth / 2).round() - 50;
     x = x - ((imageHeight * 0.7) / 8).round();
-    int x1 = (imageWidth / 2).round() + ((imageHeight * 0.7) / 8).round();
-    int y1 = imageHeight.round() - (imageHeight * 0.3).round();
+    int x1 = (imageWidth / 2).round() + ((imageHeight * 0.7) / 8).round() + 50;
+    int y1 = imageHeight.round() - y;
     aiPlugin.pushAdjustCameraData(poses, x, y, x1, y1);
 
     adjusting = false;
+  }
+
+  @override
+  void onClose() {
+    super.onClose();
+    cameraController.value?.dispose();
   }
 }

@@ -14,7 +14,7 @@ class AiPlugin {
 
   ///poses will pushed real time from local
   void pushAdjustCameraData(List<Pose> poses, int x, int y, int x1, int y1) {
-    //print("canhdt $x $y $x1 $y1");
+    print("canhdt $x $y $x1 $y1");
     int percent = 0;
 
     ///count here

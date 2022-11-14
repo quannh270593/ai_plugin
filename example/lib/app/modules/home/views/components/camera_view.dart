@@ -450,7 +450,7 @@ class _CameraViewState extends State<CameraView> {
       inputImageFormat: inputImageFormat,
       planeData: planeData,
     );
-
+    print("canhdt rotation ${inputImageData.imageRotation}");
     final inputImage =
         InputImage.fromBytes(bytes: bytes, inputImageData: inputImageData);
 
