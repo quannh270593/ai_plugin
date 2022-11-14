@@ -61,7 +61,7 @@ class HomeController extends GetxController {
         inputImage.inputImageData!.size,
         inputImage.inputImageData!.imageRotation,
       );
-      aiPlugin.pushPoseData(poses);
+      aiPlugin.pushPoseData(poses, "squat");
       customPaint = CustomPaint(painter: painter);
     } else {
       text = 'Poses found: ${poses.length}\n\n';

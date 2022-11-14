@@ -14,13 +14,15 @@ class AdjustCameraController extends GetxController {
   ));
 
   final AiPlugin aiPlugin = AiPlugin();
-  bool adjusting = false;
+  bool isBusy = false;
 
   ///state
+  var adjusting = true.obs;
   var cameraController = Rxn<CameraController>();
   var cameraViewHeight = 0.0.obs;
   var cameraIndex = 1;
   var percentFit = 0.obs;
+  var count = 0.obs;
 
   @override
   void onInit() async {
@@ -33,6 +35,14 @@ class AdjustCameraController extends GetxController {
     );
     aiPlugin.adjustCameraCallback = (percent) {
       percentFit.value = percent;
+      if (percent > 80) {
+        print("canhdt end adjusting");
+        adjusting.value = false;
+
+      }
+    };
+    aiPlugin.countCallback = (count) {
+      this.count.value = count;
     };
     await cameraController.value?.initialize();
     cameraController.value?.startImageStream(_onAdjustCameraImage);
@@ -44,11 +54,11 @@ class AdjustCameraController extends GetxController {
     //   //print("canhdt !_canProcess");
     //   return;
     // }
-    if (adjusting) {
+    if (isBusy) {
       //print("canhdt !_isBusy");
       return;
     }
-    adjusting = true;
+    isBusy = true;
     final WriteBuffer allBytes = WriteBuffer();
     for (final Plane plane in image.planes) {
       allBytes.putUint8List(plane.bytes);
@@ -99,9 +109,12 @@ class AdjustCameraController extends GetxController {
     x = x - ((imageHeight * 0.7) / 8).round();
     int x1 = (imageWidth / 2).round() + ((imageHeight * 0.7) / 8).round() + 50;
     int y1 = imageHeight.round() - y;
-    aiPlugin.pushAdjustCameraData(poses, x, y, x1, y1);
-
-    adjusting = false;
+    if(adjusting.value== true) {
+      aiPlugin.pushAdjustCameraData(poses, x, y, x1, y1);
+    } else{
+      aiPlugin.pushPoseData(poses, "squat");
+    }
+    isBusy = false;
   }
 
   @override

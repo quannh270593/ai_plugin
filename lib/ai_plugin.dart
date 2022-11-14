@@ -26,7 +26,7 @@ class AiPlugin {
   }
 
   ///poses will pushed real time from local
-  void pushPoseData(List<Pose> poses) {
+  void pushPoseData(List<Pose> poses, String action) {
     int count = 0;
 
     ///count here
