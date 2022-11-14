@@ -1,7 +1,10 @@
 import 'package:ai_plugin_example/app/modules/adjust_camera/adjust_camera_view.dart';
 import 'package:ai_plugin_example/app/modules/home/views/home_view.dart';
+import 'package:ai_plugin_example/app/routes/app_pages.dart';
+import 'package:ai_plugin_example/app_bindings.dart';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 List<CameraDescription> cameras = [];
@@ -9,17 +12,21 @@ List<CameraDescription> cameras = [];
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   cameras = await availableCameras();
-  // runApp(GetMaterialApp(
-  //       title: "Application",
-  //       initialRoute: AppPages.INITIAL,
-  //       getPages: AppPages.routes,
-  //     ));
-  runApp(MaterialApp(
-    home: MainApp(),
+  runApp(GetMaterialApp(
+    navigatorKey: Get.key,
+    onGenerateRoute: AppRoutes.generateRoute,
+    initialRoute: RouteName.root,
+    initialBinding: AppBindings(),
+    enableLog: true,
   ));
+  // runApp(MaterialApp(
+  //   home: MainApp(),
+  // ));
 }
-
+//
 class MainApp extends StatefulWidget {
+  const MainApp({super.key});
+
   @override
   State<StatefulWidget> createState() {
     return _MainAppState();
@@ -47,10 +54,7 @@ class _MainAppState extends State<MainApp> {
             children: [
               ElevatedButton(
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => HomeView()),
-                  );
+                  Get.toNamed(RouteName.home);
                 },
                 child: Container(
                   padding: const EdgeInsets.all(20),
@@ -59,10 +63,7 @@ class _MainAppState extends State<MainApp> {
               ),
               ElevatedButton(
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => AdjustCameraView()),
-                  );
+                  Get.toNamed(RouteName.camera);
                 },
                 child: Container(
                   padding: const EdgeInsets.all(20),

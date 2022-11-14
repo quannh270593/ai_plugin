@@ -3,6 +3,7 @@ import 'package:ai_plugin_example/app/modules/home/views/components/pose_painter
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 
@@ -37,8 +38,8 @@ class AdjustCameraController extends GetxController {
     );
     aiPlugin.adjustCameraCallback = (percent) {
       percentFit.value = percent;
-      if (percent > 80) {
-        print("canhdt end adjusting");
+      if (percent > 90) {
+        //print("canhdt end adjusting");
         adjusting.value = false;
       }
     };
@@ -48,6 +49,13 @@ class AdjustCameraController extends GetxController {
     await cameraController.value?.initialize();
     cameraController.value?.startImageStream(_onAdjustCameraImage);
     cameraController.refresh();
+    // SystemChrome.setPreferredOrientations([
+    //   DeviceOrientation.landscapeRight,
+    //   DeviceOrientation.landscapeLeft,
+    //   DeviceOrientation.portraitDown,
+    //   DeviceOrientation.portraitUp,
+    // ]);
+    print("canhdt oninit");
   }
 
   Future<void> _onAdjustCameraImage(CameraImage image) async {
@@ -100,12 +108,12 @@ class AdjustCameraController extends GetxController {
     ///
     var imageWidth = image.width.toDouble();
     var imageHeight = image.height.toDouble();
-    if (imageRotation == InputImageRotation.rotation90deg ||
-        imageRotation == InputImageRotation.rotation270deg) {
-      var temp = imageWidth;
-      imageWidth = imageHeight;
-      imageHeight = temp;
-    }
+    // if (imageRotation == InputImageRotation.rotation90deg ||
+    //     imageRotation == InputImageRotation.rotation270deg) {
+    //   var temp = imageWidth;
+    //   imageWidth = imageHeight;
+    //   imageHeight = temp;
+    // }
     int y = ((imageHeight * 0.3) / 2).round();
     int x = (imageWidth / 2).round();
     x = x - ((imageHeight * 0.7) / 6).round();
@@ -122,8 +130,6 @@ class AdjustCameraController extends GetxController {
         //InputImageRotation.rotation270deg
       );
       customPaint.value = CustomPaint(painter: painter);
-      //customPaint.refresh();
-      // update();
     } else {
       customPaint.value = null;
     }
@@ -134,12 +140,23 @@ class AdjustCameraController extends GetxController {
       aiPlugin.pushPoseData(poses, "squat");
     }
     isBusy = false;
-    //update();
   }
 
   @override
-  void onClose() {
+  void onClose() async {
     super.onClose();
-    cameraController.value?.dispose();
+
+    await cameraController.value?.stopImageStream();
+    await cameraController.value?.dispose();
+    print("canhdt onclose");
+    // SystemChrome.setPreferredOrientations([
+    //   DeviceOrientation.portraitUp,
+    // ]);
+  }
+
+  @override
+  void onReady() {
+    super.onReady();
+    print("canhdt onReady");
   }
 }

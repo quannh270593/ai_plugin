@@ -8,7 +8,6 @@ class AdjustCameraView extends GetView<AdjustCameraController> {
 
   @override
   Widget build(BuildContext context) {
-    Get.put(AdjustCameraController());
     return Scaffold(
       //appBar: AppBar(),
       body: SafeArea(
@@ -41,7 +40,7 @@ class AdjustCameraView extends GetView<AdjustCameraController> {
       );
       Widget aiView = _adjustingView(scale, fitPercent);
       if (adjusting == false) {
-        aiView = _countView(size.width, size.height);
+        aiView = _countView(size.width, size.height, context);
       }
       return SizedBox(
         //height: 100,
@@ -57,6 +56,13 @@ class AdjustCameraView extends GetView<AdjustCameraController> {
                   decoration:
                       BoxDecoration(border: Border.all(color: Colors.red))),
             ),
+            // Center(
+            //   child: Container(
+            //       height: 896/scale,
+            //       width: 299/scale,
+            //       decoration:
+            //       BoxDecoration(border: Border.all(color: Colors.blue))),
+            // ),
             if (customPaint != null) customPaint,
           ],
         ),
@@ -64,7 +70,7 @@ class AdjustCameraView extends GetView<AdjustCameraController> {
     });
   }
 
-  Widget _countView(double width, double height) {
+  Widget _countView(double width, double height, BuildContext context) {
     return Stack(
       children: [
         Positioned(
@@ -100,5 +106,4 @@ class AdjustCameraView extends GetView<AdjustCameraController> {
       ],
     );
   }
-
 }

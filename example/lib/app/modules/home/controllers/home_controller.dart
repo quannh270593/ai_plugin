@@ -37,8 +37,10 @@ class HomeController extends GetxController {
 
   @override
   void onClose() {
+    print("canhdt on homecontroller close");
     _canProcess = false;
     _poseDetector.close();
+
     super.onClose();
   }
 
