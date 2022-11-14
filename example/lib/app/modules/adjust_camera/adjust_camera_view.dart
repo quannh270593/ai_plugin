@@ -46,6 +46,7 @@ class AdjustCameraView extends GetView<AdjustCameraController> {
       return SizedBox(
         //height: 100,
         child: Stack(
+          fit: StackFit.expand,
           children: [
             Center(child: camera),
             aiView,
@@ -57,13 +58,6 @@ class AdjustCameraView extends GetView<AdjustCameraController> {
                       BoxDecoration(border: Border.all(color: Colors.red))),
             ),
             if (customPaint != null) customPaint,
-            // Center(
-            //   child: Container(
-            //       height: 100,
-            //       width: 100,
-            //       decoration:
-            //       BoxDecoration(border: Border.all(color: Colors.red))),
-            // ),
           ],
         ),
       );
@@ -71,7 +65,6 @@ class AdjustCameraView extends GetView<AdjustCameraController> {
   }
 
   Widget _countView(double width, double height) {
-    //print("canhdt set state");
     return Stack(
       children: [
         Positioned(

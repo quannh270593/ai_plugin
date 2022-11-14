@@ -115,19 +115,16 @@ class AdjustCameraController extends GetxController {
     ///
     if (inputImage.inputImageData?.size != null &&
         inputImage.inputImageData?.imageRotation != null) {
-
       var painter = PosePainter(
         poses,
         inputImage.inputImageData!.size,
         inputImage.inputImageData!.imageRotation,
         //InputImageRotation.rotation270deg
       );
-      print("canhdt painter");
       customPaint.value = CustomPaint(painter: painter);
       //customPaint.refresh();
       // update();
     } else {
-      print("canhdt customPaint null");
       customPaint.value = null;
     }
 
