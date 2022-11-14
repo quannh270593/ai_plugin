@@ -1,4 +1,5 @@
 import 'package:ai_plugin/ai_plugin.dart';
+import 'package:ai_plugin_example/app/modules/home/views/components/pose_painter.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -23,6 +24,7 @@ class AdjustCameraController extends GetxController {
   var cameraIndex = 1;
   var percentFit = 0.obs;
   var count = 0.obs;
+  var customPaint = Rxn<CustomPaint>();
 
   @override
   void onInit() async {
@@ -38,7 +40,6 @@ class AdjustCameraController extends GetxController {
       if (percent > 80) {
         print("canhdt end adjusting");
         adjusting.value = false;
-
       }
     };
     aiPlugin.countCallback = (count) {
@@ -67,11 +68,10 @@ class AdjustCameraController extends GetxController {
       allBytes.putUint8List(plane.bytes);
     }
     final bytes = allBytes.done().buffer.asUint8List();
-
     final Size imageSize =
         Size(image.width.toDouble(), image.height.toDouble());
     final camera = cameras[cameraIndex.toInt()];
-    final imageRotation = //InputImageRotation.rotation;
+    final imageRotation =
         InputImageRotationValue.fromRawValue(camera.sensorOrientation);
     if (imageRotation == null) return;
     final inputImageFormat =
@@ -96,6 +96,8 @@ class AdjustCameraController extends GetxController {
     final inputImage =
         InputImage.fromBytes(bytes: bytes, inputImageData: inputImageData);
     final poses = await _poseDetector.processImage(inputImage);
+
+    ///
     var imageWidth = image.width.toDouble();
     var imageHeight = image.height.toDouble();
     if (imageRotation == InputImageRotation.rotation90deg ||
@@ -105,16 +107,37 @@ class AdjustCameraController extends GetxController {
       imageHeight = temp;
     }
     int y = ((imageHeight * 0.3) / 2).round();
-    int x = (imageWidth / 2).round() - 50;
-    x = x - ((imageHeight * 0.7) / 8).round();
-    int x1 = (imageWidth / 2).round() + ((imageHeight * 0.7) / 8).round() + 50;
+    int x = (imageWidth / 2).round();
+    x = x - ((imageHeight * 0.7) / 6).round();
+    int x1 = x + ((imageHeight * 0.7) / 3).round();
     int y1 = imageHeight.round() - y;
-    if(adjusting.value== true) {
-      aiPlugin.pushAdjustCameraData(poses, x, y, x1, y1);
-    } else{
+
+    ///
+    if (inputImage.inputImageData?.size != null &&
+        inputImage.inputImageData?.imageRotation != null) {
+
+      var painter = PosePainter(
+        poses,
+        inputImage.inputImageData!.size,
+        inputImage.inputImageData!.imageRotation,
+        //InputImageRotation.rotation270deg
+      );
+      print("canhdt painter");
+      customPaint.value = CustomPaint(painter: painter);
+      //customPaint.refresh();
+      // update();
+    } else {
+      print("canhdt customPaint null");
+      customPaint.value = null;
+    }
+
+    if (adjusting.value == true) {
+      aiPlugin.pushAdjustCameraData(poses, x, y, x1, y1, inputImageData);
+    } else {
       aiPlugin.pushPoseData(poses, "squat");
     }
     isBusy = false;
+    //update();
   }
 
   @override

@@ -22,7 +22,7 @@ class AdjustCameraView extends GetView<AdjustCameraController> {
       var cameraController = controller.cameraController.value;
       var fitPercent = controller.percentFit.value.toString();
       var adjusting = controller.adjusting.value;
-
+      var customPaint = controller.customPaint.value;
       var scale = 0.0;
       Widget camera = Container();
       if (cameraController == null ||
@@ -41,21 +41,37 @@ class AdjustCameraView extends GetView<AdjustCameraController> {
       );
       Widget aiView = _adjustingView(scale, fitPercent);
       if (adjusting == false) {
-        aiView = _countView();
+        aiView = _countView(size.width, size.height);
       }
       return SizedBox(
-        //height: 500,
+        //height: 100,
         child: Stack(
           children: [
             Center(child: camera),
             aiView,
+            Center(
+              child: Container(
+                  height: size.height * 0.7 * scale,
+                  width: size.height * 0.7 / 3 * scale,
+                  decoration:
+                      BoxDecoration(border: Border.all(color: Colors.red))),
+            ),
+            if (customPaint != null) customPaint,
+            // Center(
+            //   child: Container(
+            //       height: 100,
+            //       width: 100,
+            //       decoration:
+            //       BoxDecoration(border: Border.all(color: Colors.red))),
+            // ),
           ],
         ),
       );
     });
   }
 
-  Widget _countView() {
+  Widget _countView(double width, double height) {
+    //print("canhdt set state");
     return Stack(
       children: [
         Positioned(
@@ -63,7 +79,6 @@ class AdjustCameraView extends GetView<AdjustCameraController> {
           left: 100,
           child: Text(
             controller.count.value.toString(),
-            // "ccccc",
             style: const TextStyle(fontSize: 30, color: Colors.red),
           ),
         ),
@@ -86,15 +101,11 @@ class AdjustCameraView extends GetView<AdjustCameraController> {
         Center(
           child: Text(
             fitPercent,
-            style: TextStyle(fontSize: 30),
+            style: const TextStyle(fontSize: 30),
           ),
         ),
       ],
     );
   }
-// @override
-// void onClose() {
-//   super.onClose();
-//   //cameraController.value?.dispose();
-// }
+
 }

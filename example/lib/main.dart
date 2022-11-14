@@ -53,8 +53,8 @@ class _MainAppState extends State<MainApp> {
                   );
                 },
                 child: Container(
-                  padding: EdgeInsets.all(20),
-                  child: Text("camera"),
+                  padding: const EdgeInsets.all(20),
+                  child: const Text("camera"),
                 ),
               ),
               ElevatedButton(
@@ -81,4 +81,5 @@ class _MainAppState extends State<MainApp> {
     //controller.dispose();
     super.dispose();
   }
+
 }
