@@ -1,7 +1,8 @@
+import 'dart:io';
+
 import 'package:ai_plugin/ai_plugin.dart';
 import 'package:ai_plugin_example/app/modules/home/views/components/pose_painter.dart';
 import 'package:camera/camera.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -26,6 +27,9 @@ class AdjustCameraController extends GetxController {
   var percentFit = 0.obs;
   var count = 0.obs;
   var customPaint = Rxn<CustomPaint>();
+
+  var widthSendToAI = 0.obs;
+  var heightSendToAi = 0.obs;
 
   @override
   void onInit() async {
@@ -108,26 +112,55 @@ class AdjustCameraController extends GetxController {
     ///
     var imageWidth = image.width.toDouble();
     var imageHeight = image.height.toDouble();
-    // if (imageRotation == InputImageRotation.rotation90deg ||
-    //     imageRotation == InputImageRotation.rotation270deg) {
+    // if (imageHeight < imageWidth) {
     //   var temp = imageWidth;
     //   imageWidth = imageHeight;
     //   imageHeight = temp;
     // }
-    int y = ((imageHeight * 0.3) / 2).round();
-    int x = (imageWidth / 2).round();
-    x = x - ((imageHeight * 0.7) / 6).round();
-    int x1 = x + ((imageHeight * 0.7) / 3).round();
-    int y1 = imageHeight.round() - y;
+    int x = 0, y = 0, x1 = 0, y1 = 0;
+    print("canhdt rotation $imageRotation");
+    print("canhdt size $imageSize");
+    if (Platform.isIOS) {
+      y = ((imageHeight * 0.3) / 2).round();
+      x = (imageWidth / 2).round();
+      x = x - ((imageHeight * 0.7) / 6).round();
+      x1 = x + ((imageHeight * 0.7) / 3).round();
+      y1 = imageHeight.round() - y;
+      widthSendToAI.value = (x1 - x).abs();
+      heightSendToAi.value = (y1 - y).abs();
+    } else {
+      y = ((imageWidth * 0.3) / 2).round();
+      x = (imageHeight / 2).round();
+      x = x - ((imageWidth * 0.7) / 6).round();
+      x1 = x + ((imageWidth * 0.7) / 3).round();
+      y1 = imageWidth.round() - y;
+      widthSendToAI.value = (x1 - x).abs();
+      heightSendToAi.value = (y1 - y).abs();
+    }
 
-    ///
+    // print("canhdt original $x $y $x1 $y1");
+    // x = translateX(x.toDouble(), imageRotation, inputImageData.size,
+    //         inputImageData.size)
+    //     .round();
+    // y = translateX(y.toDouble(), imageRotation, inputImageData.size,
+    //         inputImageData.size)
+    //     .round();
+    // x1 = translateX(x1.toDouble(), imageRotation, inputImageData.size,
+    //         inputImageData.size)
+    //     .round();
+    // y1 = translateX(y1.toDouble(), imageRotation, inputImageData.size,
+    //         inputImageData.size)
+    //     .round();
+
+    print("canhdt traslated $x $y $x1 $y1");
+    print("canhdt ${widthSendToAI.value} ${heightSendToAi.value}");
+
     if (inputImage.inputImageData?.size != null &&
         inputImage.inputImageData?.imageRotation != null) {
       var painter = PosePainter(
         poses,
         inputImage.inputImageData!.size,
         inputImage.inputImageData!.imageRotation,
-        //InputImageRotation.rotation270deg
       );
       customPaint.value = CustomPaint(painter: painter);
     } else {
@@ -158,5 +191,41 @@ class AdjustCameraController extends GetxController {
   void onReady() {
     super.onReady();
     print("canhdt onReady");
+  }
+
+  double translateX(double x, InputImageRotation rotation, Size size,
+      Size absoluteImageSize) {
+    switch (rotation) {
+      case InputImageRotation.rotation90deg:
+        return x *
+            size.width /
+            (Platform.isIOS
+                ? absoluteImageSize.width
+                : absoluteImageSize.height);
+      case InputImageRotation.rotation270deg:
+        return size.width -
+            x *
+                size.width /
+                (Platform.isIOS
+                    ? absoluteImageSize.width
+                    : absoluteImageSize.height);
+      default:
+        return x * size.width / absoluteImageSize.width;
+    }
+  }
+
+  double translateY(double y, InputImageRotation rotation, Size size,
+      Size absoluteImageSize) {
+    switch (rotation) {
+      case InputImageRotation.rotation90deg:
+      case InputImageRotation.rotation270deg:
+        return y *
+            size.height /
+            (Platform.isIOS
+                ? absoluteImageSize.height
+                : absoluteImageSize.width);
+      default:
+        return y * size.height / absoluteImageSize.height;
+    }
   }
 }

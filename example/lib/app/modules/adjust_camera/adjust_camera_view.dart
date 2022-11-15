@@ -56,13 +56,17 @@ class AdjustCameraView extends GetView<AdjustCameraController> {
                   decoration:
                       BoxDecoration(border: Border.all(color: Colors.red))),
             ),
-            // Center(
-            //   child: Container(
-            //       height: 896/scale,
-            //       width: 299/scale,
-            //       decoration:
-            //       BoxDecoration(border: Border.all(color: Colors.blue))),
-            // ),
+            Center(
+              child: Container(
+                  // height: 0,
+                  // width: 0,
+                  // height: 896/scale,
+                  // width: 299/scale,
+                  width: controller.widthSendToAI.value.toDouble() / scale,
+                  height: controller.heightSendToAi.value.toDouble() / scale,
+                  decoration:
+                      BoxDecoration(border: Border.all(color: Colors.blue))),
+            ),
             if (customPaint != null) customPaint,
           ],
         ),

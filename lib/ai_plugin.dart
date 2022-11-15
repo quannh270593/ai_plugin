@@ -23,19 +23,19 @@ class AiPlugin {
     int y1,
     InputImageData inputImageData,
   ) {
-    //print("canhdt original $x $y $x1 $y1");
-
-    // x = translateX(x.toDouble(), inputImageData.imageRotation, inputImageData.size, inputImageData.size).round();
-    // y = translateX(y.toDouble(), inputImageData.imageRotation, inputImageData.size, inputImageData.size).round();
-    // x1 = translateX(x1.toDouble(), inputImageData.imageRotation, inputImageData.size, inputImageData.size).round();
-    // y1 = translateX(y1.toDouble(), inputImageData.imageRotation, inputImageData.size, inputImageData.size).round();
+    // print("canhdt original $x $y $x1 $y1");
+    // print("canhdt ${inputImageData.imageRotation}");
+    // x = translateX(x.toDouble(), InputImageRotation.rotation90deg, inputImageData.size, inputImageData.size).round();
+    // y = translateX(y.toDouble(), InputImageRotation.rotation90deg, inputImageData.size, inputImageData.size).round();
+    // x1 = translateX(x1.toDouble(), InputImageRotation.rotation90deg, inputImageData.size, inputImageData.size).round();
+    // y1 = translateX(y1.toDouble(), InputImageRotation.rotation90deg, inputImageData.size, inputImageData.size).round();
 
     //print("canhdt traslated $x $y $x1 $y1");
     int percent = 0;
 
     ///count here
     ///fake data
-    percent = Random().nextInt(100);
+    //percent = Random().nextInt(100);
 
     ///return data to local throw callback
     adjustCameraCallback.call(percent);
