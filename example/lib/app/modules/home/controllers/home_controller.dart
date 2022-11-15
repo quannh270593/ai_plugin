@@ -1,4 +1,5 @@
 import 'package:ai_plugin/ai_plugin.dart';
+import 'package:ai_plugin/exercise_result.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
@@ -19,15 +20,17 @@ class HomeController extends GetxController {
 
   //TODO: Implement HomeController
 
-  final AiPlugin aiPlugin = AiPlugin();
+  late AiPlugin aiPlugin;
 
   @override
   void onInit() {
     super.onInit();
+    aiPlugin = AiPlugin(
+        countCallback: countCallback, adjustCameraCallback: (reslut) {});
+  }
 
-    aiPlugin.countCallback = (count) {
-      this.count = count;
-    };
+  void countCallback(ExerciseResult count) {
+    this.count = count.result;
   }
 
   @override

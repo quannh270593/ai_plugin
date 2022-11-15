@@ -1,6 +1,6 @@
-import 'dart:io';
-
 import 'package:ai_plugin/ai_plugin.dart';
+import 'package:ai_plugin/exercise_name.dart';
+import 'package:ai_plugin/exercise_result.dart';
 import 'package:ai_plugin_example/app/modules/home/views/components/pose_painter.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
@@ -16,7 +16,7 @@ class AdjustCameraController extends GetxController {
     model: PoseDetectionModel.accurate,
   ));
 
-  final AiPlugin aiPlugin = AiPlugin();
+  late AiPlugin aiPlugin;
   bool isBusy = false;
 
   ///state
@@ -24,7 +24,7 @@ class AdjustCameraController extends GetxController {
   var cameraController = Rxn<CameraController>();
   var cameraViewHeight = 0.0.obs;
   var cameraIndex = 1;
-  var percentFit = 0.obs;
+  var percentFit = ExerciseResult(type: ResultType.percent).obs;
   var count = 0.obs;
   var customPaint = Rxn<CustomPaint>();
 
@@ -40,26 +40,27 @@ class AdjustCameraController extends GetxController {
       ResolutionPreset.high,
       enableAudio: false,
     );
-    aiPlugin.adjustCameraCallback = (percent) {
-      percentFit.value = percent;
-      if (percent > 90) {
-        //print("canhdt end adjusting");
-        adjusting.value = false;
-      }
-    };
-    aiPlugin.countCallback = (count) {
-      this.count.value = count;
-    };
+    aiPlugin = AiPlugin(
+      countCallback: exerciseCallback,
+      adjustCameraCallback: adjustCameraCallback,
+    );
+
     await cameraController.value?.initialize();
     cameraController.value?.startImageStream(_onAdjustCameraImage);
-    cameraController.refresh();
-    // SystemChrome.setPreferredOrientations([
-    //   DeviceOrientation.landscapeRight,
-    //   DeviceOrientation.landscapeLeft,
-    //   DeviceOrientation.portraitDown,
-    //   DeviceOrientation.portraitUp,
-    // ]);
+    //cameraController.refresh();
     print("canhdt oninit");
+  }
+
+  void adjustCameraCallback(percent) {
+    percentFit.value.result = percent.result;
+    if (percent.result > 90) {
+      //print("canhdt end adjusting");
+      adjusting.value = false;
+    }
+  }
+
+  void exerciseCallback(count) {
+    this.count.value = count;
   }
 
   Future<void> _onAdjustCameraImage(CameraImage image) async {
@@ -68,7 +69,6 @@ class AdjustCameraController extends GetxController {
     //   return;
     // }
     if (isBusy) {
-      //print("canhdt !_isBusy");
       return;
     }
     isBusy = true;
@@ -109,52 +109,6 @@ class AdjustCameraController extends GetxController {
         InputImage.fromBytes(bytes: bytes, inputImageData: inputImageData);
     final poses = await _poseDetector.processImage(inputImage);
 
-    ///
-    var imageWidth = image.width.toDouble();
-    var imageHeight = image.height.toDouble();
-    // if (imageHeight < imageWidth) {
-    //   var temp = imageWidth;
-    //   imageWidth = imageHeight;
-    //   imageHeight = temp;
-    // }
-    int x = 0, y = 0, x1 = 0, y1 = 0;
-    print("canhdt rotation $imageRotation");
-    print("canhdt size $imageSize");
-    if (Platform.isIOS) {
-      y = ((imageHeight * 0.3) / 2).round();
-      x = (imageWidth / 2).round();
-      x = x - ((imageHeight * 0.7) / 6).round();
-      x1 = x + ((imageHeight * 0.7) / 3).round();
-      y1 = imageHeight.round() - y;
-      widthSendToAI.value = (x1 - x).abs();
-      heightSendToAi.value = (y1 - y).abs();
-    } else {
-      y = ((imageWidth * 0.3) / 2).round();
-      x = (imageHeight / 2).round();
-      x = x - ((imageWidth * 0.7) / 6).round();
-      x1 = x + ((imageWidth * 0.7) / 3).round();
-      y1 = imageWidth.round() - y;
-      widthSendToAI.value = (x1 - x).abs();
-      heightSendToAi.value = (y1 - y).abs();
-    }
-
-    // print("canhdt original $x $y $x1 $y1");
-    // x = translateX(x.toDouble(), imageRotation, inputImageData.size,
-    //         inputImageData.size)
-    //     .round();
-    // y = translateX(y.toDouble(), imageRotation, inputImageData.size,
-    //         inputImageData.size)
-    //     .round();
-    // x1 = translateX(x1.toDouble(), imageRotation, inputImageData.size,
-    //         inputImageData.size)
-    //     .round();
-    // y1 = translateX(y1.toDouble(), imageRotation, inputImageData.size,
-    //         inputImageData.size)
-    //     .round();
-
-    print("canhdt traslated $x $y $x1 $y1");
-    print("canhdt ${widthSendToAI.value} ${heightSendToAi.value}");
-
     if (inputImage.inputImageData?.size != null &&
         inputImage.inputImageData?.imageRotation != null) {
       var painter = PosePainter(
@@ -168,9 +122,9 @@ class AdjustCameraController extends GetxController {
     }
 
     if (adjusting.value == true) {
-      aiPlugin.pushAdjustCameraData(poses, x, y, x1, y1, inputImageData);
+      aiPlugin.pushAdjustCameraData(poses, inputImageData);
     } else {
-      aiPlugin.pushPoseData(poses, "squat");
+      aiPlugin.pushPoseData(poses, ExerciseName.squat);
     }
     isBusy = false;
   }
@@ -191,41 +145,5 @@ class AdjustCameraController extends GetxController {
   void onReady() {
     super.onReady();
     print("canhdt onReady");
-  }
-
-  double translateX(double x, InputImageRotation rotation, Size size,
-      Size absoluteImageSize) {
-    switch (rotation) {
-      case InputImageRotation.rotation90deg:
-        return x *
-            size.width /
-            (Platform.isIOS
-                ? absoluteImageSize.width
-                : absoluteImageSize.height);
-      case InputImageRotation.rotation270deg:
-        return size.width -
-            x *
-                size.width /
-                (Platform.isIOS
-                    ? absoluteImageSize.width
-                    : absoluteImageSize.height);
-      default:
-        return x * size.width / absoluteImageSize.width;
-    }
-  }
-
-  double translateY(double y, InputImageRotation rotation, Size size,
-      Size absoluteImageSize) {
-    switch (rotation) {
-      case InputImageRotation.rotation90deg:
-      case InputImageRotation.rotation270deg:
-        return y *
-            size.height /
-            (Platform.isIOS
-                ? absoluteImageSize.height
-                : absoluteImageSize.width);
-      default:
-        return y * size.height / absoluteImageSize.height;
-    }
   }
 }
