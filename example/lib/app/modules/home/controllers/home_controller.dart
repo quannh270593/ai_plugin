@@ -1,4 +1,5 @@
 import 'package:ai_plugin/ai_plugin.dart';
+import 'package:ai_plugin/exercise_name.dart';
 import 'package:ai_plugin/exercise_result.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -66,7 +67,7 @@ class HomeController extends GetxController {
         inputImage.inputImageData!.size,
         inputImage.inputImageData!.imageRotation,
       );
-      aiPlugin.pushPoseData(poses, "squat");
+      aiPlugin.pushPoseData(poses, ExerciseName.squat);
       customPaint = CustomPaint(painter: painter);
     } else {
       text = 'Poses found: ${poses.length}\n\n';

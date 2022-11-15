@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'dart:math';
 
+import 'package:ai_plugin/exercise_name.dart';
 import 'package:ai_plugin/exercise_result.dart';
-import 'package:flutter/material.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 
 import 'ai_plugin_platform_interface.dart';
@@ -11,16 +11,17 @@ class AiPlugin {
   void Function(ExerciseResult) countCallback;
   void Function(ExerciseResult) adjustCameraCallback;
 
-  AiPlugin({required this.countCallback, required this.adjustCameraCallback}){}
+  AiPlugin({required this.countCallback, required this.adjustCameraCallback});
 
   Future<String?> getPlatformVersion() {
     return AiPluginPlatform.instance.getPlatformVersion();
   }
 
-
   ///poses will pushed real time from local
-  void pushAdjustCameraData(List<Pose> poses,
-      InputImageData inputImageData,) {
+  void pushAdjustCameraData(
+    List<Pose> poses,
+    InputImageData inputImageData,
+  ) {
     ExerciseResult percent = ExerciseResult(type: ResultType.percent);
 
     ///count here
@@ -32,10 +33,7 @@ class AiPlugin {
     var imageSize = inputImageData.size;
     var imageWidth = imageSize.width.toDouble();
     var imageHeight = imageSize.height.toDouble();
-    int x = 0,
-        y = 0,
-        x1 = 0,
-        y1 = 0;
+    int x = 0, y = 0, x1 = 0, y1 = 0;
     print("canhdt rotation $imageRotation");
     print("canhdt size $imageSize");
     if (Platform.isIOS) {
@@ -68,40 +66,4 @@ class AiPlugin {
     ///return data to local throw callback
     countCallback.call(count);
   }
-
-  // double translateX(double x, InputImageRotation rotation, Size size,
-  //     Size absoluteImageSize) {
-  //   switch (rotation) {
-  //     case InputImageRotation.rotation90deg:
-  //       return x *
-  //           size.width /
-  //           (Platform.isIOS
-  //               ? absoluteImageSize.width
-  //               : absoluteImageSize.height);
-  //     case InputImageRotation.rotation270deg:
-  //       return size.width -
-  //           x *
-  //               size.width /
-  //               (Platform.isIOS
-  //                   ? absoluteImageSize.width
-  //                   : absoluteImageSize.height);
-  //     default:
-  //       return x * size.width / absoluteImageSize.width;
-  //   }
-  // }
-  //
-  // double translateY(double y, InputImageRotation rotation, Size size,
-  //     Size absoluteImageSize) {
-  //   switch (rotation) {
-  //     case InputImageRotation.rotation90deg:
-  //     case InputImageRotation.rotation270deg:
-  //       return y *
-  //           size.height /
-  //           (Platform.isIOS
-  //               ? absoluteImageSize.height
-  //               : absoluteImageSize.width);
-  //     default:
-  //       return y * size.height / absoluteImageSize.height;
-  //   }
-  // }
 }

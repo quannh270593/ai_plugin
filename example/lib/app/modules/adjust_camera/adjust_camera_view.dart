@@ -19,7 +19,7 @@ class AdjustCameraView extends GetView<AdjustCameraController> {
   Widget _cameraView(BuildContext context) {
     return Obx(() {
       var cameraController = controller.cameraController.value;
-      var fitPercent = controller.percentFit.value.toString();
+      var fitPercent = controller.percentFit.value.result.toString();
       var adjusting = controller.adjusting.value;
       var customPaint = controller.customPaint.value;
       var scale = 0.0;
